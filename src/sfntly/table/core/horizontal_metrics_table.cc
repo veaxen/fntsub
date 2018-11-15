@@ -56,14 +56,14 @@ int32_t HorizontalMetricsTable::HMetricLSB(int32_t entry) {
 }
 
 int32_t HorizontalMetricsTable::LsbTableEntry(int32_t entry) {
-  if (entry > num_hmetrics_) {
+  if (entry > NumberOfLSBs()) {
 #if !defined (SFNTLY_NO_EXCEPTION)
     throw IndexOutOfBoundException();
 #endif
     return 0;
   }
-  int32_t offset = Offset::kHMetricsStart + (entry * Offset::kHMetricsSize) +
-                   Offset::kLeftSideBearingSize;
+  int32_t offset = Offset::kHMetricsStart + (entry * Offset::kLeftSideBearingSize) +
+          (num_hmetrics_ * Offset::kHMetricsSize);
   return data_->ReadShort(offset);
 }
 
@@ -71,7 +71,7 @@ int32_t HorizontalMetricsTable::AdvanceWidth(int32_t glyph_id) {
   if (glyph_id < num_hmetrics_) {
     return HMetricAdvanceWidth(glyph_id);
   }
-  return HMetricAdvanceWidth(glyph_id - num_hmetrics_);
+  return HMetricAdvanceWidth(num_hmetrics_ - 1);
 }
 
 int32_t HorizontalMetricsTable::LeftSideBearing(int32_t glyph_id) {

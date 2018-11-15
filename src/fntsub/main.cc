@@ -9,6 +9,8 @@
 #include <string>
 #include <map>
 #include <utility>
+#include <fstream>
+#include <cstring>
 
 #include "sfntly/font.h"
 #include "subtly/character_predicate.h"
@@ -19,8 +21,9 @@
 using namespace subtly;
 
 void PrintUsage(const char* program_name) {
-    fprintf(stdout, "Usage: %s <input_font_file> <output_font_file>"
-                    " <string>\n", program_name);
+    fprintf(stdout, "Usage:\n\t%s <input_font_file> <output_dir_path>"
+                    " [-s <string>|-f <path>]\n", program_name);
+    fprintf(stdout, "\n\tAt least on of -s or -f must be specified.\n");
 }
 
 std::wstring StringToWstring(const char* utf8Bytes)
@@ -61,23 +64,45 @@ std::vector<std::string> GetAllFontPath(const std::string &allPath) {
     return result;
 }
 
-int Subset(const char*, const char*, const char*);
+int Subset(const char* font_path, const char* output_dir, const std::wstring &wstr);
 
 int main(int argc, const char* argv[]) {
     const char* program_name = argv[0];
-    if (argc < 4) {
+    if (argc < 5) {
         PrintUsage(program_name);
         exit(1);
     }
+
     clock_t start,end;
     start = clock();
+    std::wstring wstr;
+    if (std::strcmp(argv[3], "-s") == 0) {
+        wstr = StringToWstring(argv[4]);
+    } else if (std::strcmp(argv[3], "-f") == 0) {
+        std::ifstream fileStream(argv[4], std::ios::binary);
+        std::string text_content;
+        if (!fileStream.is_open()) {
+            fprintf(stderr, "failed to open %s", argv[4]);
+            exit(1);
+        }
+
+        std::string line;
+        while (std::getline(fileStream, line)) {
+            text_content.append(line);
+        }
+        fileStream.close();
+        wstr = StringToWstring(text_content.c_str());
+    } else {
+        PrintUsage(program_name);
+        exit(1);
+    }
+
     const char* input_font_paths = argv[1];
     const char* output_font_path = argv[2];
-    const char* text = argv[3];
     std::vector<std::string> allPath = GetAllFontPath(input_font_paths);
 
     for (const auto &path : allPath) {
-        Subset(path.data(), output_font_path, text);
+        Subset(path.data(), output_font_path, wstr);
     }
     end = clock();
     printf("转换耗时 %.2f 毫秒", (end - start)/(double)CLOCKS_PER_SEC*1000);
@@ -85,7 +110,7 @@ int main(int argc, const char* argv[]) {
     return 0;
 }
 
-int Subset(const char* font_path, const char* output_dir, const char* text) {
+int Subset(const char* font_path, const char* output_dir, const std::wstring &wstr) {
     FontPtr font;
     font.Attach(subtly::LoadFont(font_path));
     if (font->num_tables() == 0) {
@@ -93,9 +118,8 @@ int Subset(const char* font_path, const char* output_dir, const char* text) {
         exit(1);
     }
 
-    std::wstring wstr = StringToWstring(text);
     auto charaters = new std::set<int32_t >;
-    for (auto &unicode : wstr) {
+    for (const auto &unicode : wstr) {
         charaters->insert((int32_t)unicode);
     }
 
