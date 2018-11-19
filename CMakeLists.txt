@@ -23,7 +23,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src
 # 不使用异常
 add_definitions(-DSFNTLY_NO_EXCEPTION)
 # 设置编译器警告/报错级别
-add_definitions(-D__wur=__attribute__\(\(warn_unused_result\)\) -Wall -Werror -fno-exceptions)
+add_definitions(-D__wur=__attribute__\(\(warn_unused_result\)\) -Wall -Werror -Wno-error=strict-overflow -fno-exceptions)
 # 启用C++11
 add_definitions(-std=c++11)
 # 启用CMap和Bitmap
